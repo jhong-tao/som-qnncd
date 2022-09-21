@@ -2,8 +2,21 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="8172e207-7e7b-4f5c-985d-178576686db0" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/model.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/papers/data_supplements.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/csv-plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/csv-plugin.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/real/timss07/25_15/resp.csv" beforeDir="false" afterPath="$PROJECT_DIR$/data/real/timss07/25_15/resp.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/sim/20_4/guess.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/sim/20_4/label.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/sim/20_4/q.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/sim/20_4/resp.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/sim/20_4/slip.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/sim/20_5/guess.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/sim/20_5/label.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/sim/20_5/q.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/sim/20_5/resp.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/sim/20_5/slip.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,9 +46,14 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "D:/conda/envs/study-ml"
+    "last_opened_file_path": "E:/git/python/som-qnncd/data/papers"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\git\python\som-qnncd\data\papers" />
+    </key>
+  </component>
   <component name="RunManager" selected="Python.utils">
     <configuration name="model" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="som-qnncd" />
@@ -96,7 +114,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1663685895492</updated>
-      <workItem from="1663685896952" duration="14001000" />
+      <workItem from="1663685896952" duration="21041000" />
     </task>
     <servers />
   </component>
@@ -115,7 +133,7 @@
     </option>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/som_qnncd$utils.coverage" NAME="utils Coverage Results" MODIFIED="1663761391663" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/som_qnncd$utils.coverage" NAME="utils Coverage Results" MODIFIED="1663770406339" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/som_qnncd$model.coverage" NAME="model Coverage Results" MODIFIED="1663733813785" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
