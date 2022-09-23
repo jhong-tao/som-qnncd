@@ -117,13 +117,15 @@ def get_amp2binary(q, smp:ndarray) -> ndarray:
     return smp
 
 
-def data2csv(data, dir, file='label.csv'):
+def data2csv(data: ndarray, dir: str, file='label_expert.csv'):
     if not os.path.exists(dir):
         os.makedirs(dir)
     pd.DataFrame(data).to_csv(dir+file)
+    print(dir+file)
 
 
-def get_labels(q_file, resp_file, y_dir):
+def get_labels4expert(q_file, resp_file, y_dir):
+    # TODO:后续删除
     q = pd.read_csv(q_file).values[:, 1:]
     orp = pd.read_csv(resp_file).values[:, 1:]
     kw = get_one_skill4q(q)
@@ -162,5 +164,77 @@ def get_labels(q_file, resp_file, y_dir):
     data2csv(amp, y_dir)
 
 
+def run_r_model(q: ndarray, orp: ndarray,
+                package: Literal["CDM", "GDINA", "NPCD"]='GDINA',
+                mod_name: Literal["GDINA","DINA","DINO","ACDM","LLM", "RRUM", "MSDINA", "AlphaNP"]='DINA',
+                est_type: Literal['MLE', 'MAP', 'EAP']='MLE') -> ndarray:
+    """
+    运行R NPCD CDM  GDINA 中的模型
+    Args:
+        mod_name: "GDINA","DINA","DINO","ACDM","LLM", "RRUM", "MSDINA" and "UDF"
+        q:q矩阵
+        orp:学生作答数据
+        est_type:模型评估方法
+
+    Returns: amp 学生技能掌握模式
+
+    """
+    assert est_type in ("MLE", "MAP", "EAP"), "invalid est_type: %r" % (est_type)
+    assert package in ("CDM", "GDINA", "NPCD"), "invalid package: %r" % (package)
+    importr('NPCD')
+    importr('CDM')
+    importr('GDINA')
+
+    q = numpy2ri.py2rpy(q)
+    orp = numpy2ri.py2rpy(orp)
+
+    if package.upper() == 'NPCD':
+        amp = numpy2ri.rpy2py(r(mod_name)(orp, q).rx2('alpha.est'))  # NPCD
+    else:
+        if package.upper() == 'CDM':
+            # DINA, GDINA, RUM 等
+            amp = numpy2ri.rpy2py(r('IRT.factor.scores')(r(mod_name)(orp, q, progress=False), est_type))
+        else:
+            # GDINA(dat = dat, Q = Q, model = "ACDM")
+            amp = numpy2ri.rpy2py(r('personparm')(r('GDINA')(orp, q, mod_name, verbose=0)))  # GDINA
+    return amp
+
+
+def read_csv2numpy(file: str, is_not_clomn=True):
+    data = pd.read_csv(file)
+    if is_not_clomn:
+        return data.values[:, 1:].astype(np.int64)
+    return data.values.astype(np.int64)
+
+
+def run_r_models(q_file: str, resp_file: str, save_dir: str, models=["GDINA","DINA", "ACDM","LLM", "RRUM", "AlphaNP"]):
+    q = read_csv2numpy(q_file)
+    resp = read_csv2numpy(resp_file)
+    for model in models:
+        if model in ["GDINA","DINA", "ACDM","LLM", "RRUM"]:
+            label = run_r_model(q, resp, 'GDINA', mod_name=model)
+        else:
+            label = run_r_model(q, resp, 'NPCD', model)
+        data2csv(label, save_dir, f'label_{model}.csv')
+
+
+def get_labels(dirs: list=[], nums: list=[]):
+    if not dirs:
+        dirs = ['./data/sim/10_3/',
+                './data/sim/20_3/',
+                './data/sim/20_5/',
+                './data/sim/30_5/',
+                ]
+    if not nums:
+        nums = ['50', '100', '300', '1000']
+    for i in range(len(dirs)):
+        q_file = f'{dirs[i]}q.csv'
+        for j in range(len(nums)):
+            resp_file = f'{dirs[i]}{nums[j]}/resp.csv'
+            save_dir = f'{dirs[i]}{nums[j]}/'
+            run_r_models(q_file, resp_file, save_dir)
+            get_labels4expert(q_file,resp_file, f'{save_dir}label_expert.csv')
+
+
 if __name__ == '__main__':
-    get_labels('./data/real/timss07/25_15/q.csv', './data/real/timss07/25_15/resp.csv', './data/real/timss07/25_15/')
+    get_labels()
