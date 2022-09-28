@@ -124,10 +124,10 @@ def data2csv(data: ndarray, dir: str, file='label_expert.csv'):
     print(dir+file)
 
 
-def get_labels4expert(q_file, resp_file, y_dir):
+def get_labels4expert(q_file, resp_file):
     # TODO:后续删除
-    q = pd.read_csv(q_file).values[:, 1:]
-    orp = pd.read_csv(resp_file).values[:, 1:]
+    q = pd.read_csv(q_file).fillna(0).values[:, 1:]
+    orp = pd.read_csv(resp_file).fillna(0).values[:, 1:]
     kw = get_one_skill4q(q)
     amp = np.zeros((0, q.shape[1]))
     for i in range(orp.shape[0]):
@@ -161,7 +161,7 @@ def get_labels4expert(q_file, resp_file, y_dir):
                         row[:, col] = 0
         amp = np.append(amp, row, axis=0)
     amp = get_amp2binary(q, amp)  # 如果该技能的正误率为0.5，则看全部的人在该题上的作答情况，大多数人对，则为对
-    data2csv(amp, y_dir)
+    return amp
 
 
 def run_r_model(q: ndarray, orp: ndarray,
@@ -247,12 +247,21 @@ def get_dir_sim_data()-> list:
     return dirs
 
 
-if __name__ == '__main__':
-    path = '../data/sim/10_3/'
+def sim_get_labels(sim_dir):
+    # todo 后续删除
+    for root, dirs, files in os.walk(sim_dir):
+        if 'resp.csv' in files:
+            q = os.path.join(root, os.pardir, os.pardir, 'q.csv')
+            resp = os.path.join(root, 'resp.csv')
+            y = get_labels4expert(q, resp)
+            pd.DataFrame(y).to_csv(os.path.join(root, 'label_expert.csv'))
+            if 'label_expert' in files:
+                os.remove(os.path.join(root, 'label_expert'))
+            print(root)
 
-    for root, dirs, files in os.walk(path):
-        q = read_csv2numpy(os.path.join(path,'q.csv'))
-        if len(files) > 1:
-            for file in files:
-                print(file)
-            break
+
+if __name__ == '__main__':
+    path = '../data/sim/'
+    sim_get_labels(path)
+
+
