@@ -1,0 +1,18 @@
+# environment
+OS=win10
+IDE=PyCharm 2022.2 (Professional Edition)
+CPU=Intel i7-10875H
+GPU=NVIDIA GeForce RTX2070 Super
+# packages and version
+python=3.7.10
+numpy=1.21.6
+pandas=1.2.4
+pytorch=1.8.1
+sklearn=1.0.2
+rpy2=3.5.4
+R=4.2.1
+NPCD=1.0-11
+CDM=7.5-15
+GDINA=2.8.8
+
+
