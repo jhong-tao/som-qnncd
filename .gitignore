@@ -1,0 +1,11 @@
+*.jpg
+*.png
+*.pdf
+*.svg
+*.psd
+*.txt
+/papers/
+/data/sim/
+/data/real/
+/data/test/
+/result/

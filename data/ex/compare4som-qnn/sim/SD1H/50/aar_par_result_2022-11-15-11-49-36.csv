@@ -1,0 +1,2 @@
+data_name,base_aar,base_par,np_aar,np_par,qnn_aar,qnn_par,nn_sup_aar,nn_sup_par,nn_unsup_aar,nn_unsup_par
+SD1H50_5,0.567,0.06,0.873,0.66,0.873,0.66,0.907,0.72,0.907,0.72

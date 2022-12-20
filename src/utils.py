@@ -10,11 +10,16 @@
 ==================================================
 """
 import os
+import shutil
 
 import numpy as np
+import pandas
 from numpy import ndarray
 import pandas as pd
 from pandas import DataFrame
+
+import torch
+from torch import Tensor
 
 from rpy2.robjects import ListVector
 from rpy2.robjects import r
@@ -26,6 +31,31 @@ try:
     from typing import Literal
 except ImportError:
     from typing_extensions import Literal
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+def np2tensor(self, data: ndarray) -> Tensor:
+    """
+    将ndarray快速转换为Tensor
+    """
+    data = pd.DataFrame(data).fillna(0).values
+
+    data = data if type(data) == Tensor else torch.tensor(data=data, device=device, dtype=torch.float32)
+    return data
+
+
+def tensor2np(self, data: Tensor) -> ndarray:
+    """
+    tensor to numpy
+    Args:
+        data:
+
+    Returns:
+
+    """
+    data = data if type(data) == ndarray else data.detach().cpu().numpy()
+    return data
 
 
 def data4R2csv(data_name: str, dir: str ='./data/', re=False):
@@ -98,7 +128,7 @@ def get_amp2binary(q, smp:ndarray) -> ndarray:
     Args:
         smp:
 
-    Returns:smp，表示未掌握，1表示掌握
+    Returns:smp，0表示未掌握，1表示掌握
 
     """
     smp = np.where(smp > 0.5, 1, smp)
@@ -165,9 +195,10 @@ def get_labels4expert(q_file, resp_file):
 
 
 def run_r_model(q: ndarray, orp: ndarray,
+                is2binary = True,
                 package: Literal["CDM", "GDINA", "NPCD"]='GDINA',
-                mod_name: Literal["GDINA","DINA","DINO","ACDM","LLM", "RRUM", "MSDINA", "AlphaNP"]='DINA',
-                est_type: Literal['MLE', 'MAP', 'EAP']='MLE') -> ndarray:
+                mod_name: Literal["DINA","DINO","ACDM","LLM", "RRUM", "LCDM","GDINA", "AlphaNP"]='DINA',
+                est_type: Literal['MLE', 'MAP', 'EAP']='EAP') -> ndarray:
     """
     运行R NPCD CDM  GDINA 中的模型
     Args:
@@ -175,6 +206,7 @@ def run_r_model(q: ndarray, orp: ndarray,
         q:q矩阵
         orp:学生作答数据
         est_type:模型评估方法
+        is2binary:输出0,1值
 
     Returns: amp 学生技能掌握模式
 
@@ -188,7 +220,7 @@ def run_r_model(q: ndarray, orp: ndarray,
     q = numpy2ri.py2rpy(q)
     orp = numpy2ri.py2rpy(orp)
 
-    if package.upper() == 'NPCD':
+    if mod_name == 'AlphaNP':
         amp = numpy2ri.rpy2py(r(mod_name)(orp, q).rx2('alpha.est'))  # NPCD
     else:
         if package.upper() == 'CDM':
@@ -196,7 +228,13 @@ def run_r_model(q: ndarray, orp: ndarray,
             amp = numpy2ri.rpy2py(r('IRT.factor.scores')(r(mod_name)(orp, q, progress=False), est_type))
         else:
             # GDINA(dat = dat, Q = Q, model = "ACDM")
-            amp = numpy2ri.rpy2py(r('personparm')(r('GDINA')(orp, q, mod_name, verbose=0)))  # GDINA
+            # lcdm < - GDINA(dat=dat, Q=Q, model="logitGDINA", control=list(conv.type = "neg2LL"))
+            if mod_name == 'LCDM':
+                amp = numpy2ri.rpy2py(r('personparm')(r('GDINA')(orp, q, model="logitGDINA", verbose=0)))
+            else:
+                amp = numpy2ri.rpy2py(r('personparm')(r('GDINA')(orp, q, mod_name, verbose=0)))  # GDINA
+    # if is2binary:
+    #     return get_amp2binary(q, amp)
     return amp
 
 
@@ -204,8 +242,8 @@ def read_csv2numpy(file: str, is_not_clomn=True):
     data = pd.read_csv(file)
     data = data.fillna(0)
     if is_not_clomn:
-        return data.values[:, 1:].astype(np.int64)
-    return data.values.astype(np.int64)
+        return data.values[:, 1:].astype(np.int32)
+    return data.values.astype(np.int32)
 
 
 def run_r_models(q_file: str, resp_file: str, save_dir: str, models=["GDINA","DINA", "ACDM","LLM", "RRUM", "AlphaNP"]):
@@ -216,7 +254,7 @@ def run_r_models(q_file: str, resp_file: str, save_dir: str, models=["GDINA","DI
             label = run_r_model(q, resp, 'GDINA', mod_name=model)
         else:
             label = run_r_model(q, resp, 'NPCD', model)
-        data2csv(label, save_dir, f'label_{model}.csv')
+        pd.DataFrame(label).to_csv(os.path.join(save_dir, f'label_{model}.csv'))  # f'{save_dir}label_{model}.csv'
 
 
 def get_labels4R(dirs: list=[], nums: list=[]):
@@ -255,13 +293,82 @@ def sim_get_labels(sim_dir):
             resp = os.path.join(root, 'resp.csv')
             y = get_labels4expert(q, resp)
             pd.DataFrame(y).to_csv(os.path.join(root, 'label_expert.csv'))
-            if 'label_expert' in files:
-                os.remove(os.path.join(root, 'label_expert'))
             print(root)
 
 
+def metric_aar(y_hat, y):
+    y_hat = np.where(y_hat > 0.5, 1, 0)
+    aar = np.mean(1 - np.abs(y - y_hat))  # aar
+    return aar
+
+
+def metric_par(y_hat, y):
+    y_hat = np.where(y_hat > 0.5, 1, 0)
+    par = np.mean(np.prod(np.where((y_hat == y) == True, 1, 0), axis=1))  # par
+    return par
+
+
+def setDir(filepath):
+    '''
+    如果文件夹不存在就创建，如果文件存在就清空！
+    :param filepath:需要创建的文件夹路径
+    :return:
+    '''
+    if not os.path.exists(filepath):
+        os.mkdir(filepath)
+    else:
+        shutil.rmtree(filepath,ignore_errors=True)
+        # os.mkdir(filepath)
+
+def del_files2(dir_path):
+    for root, dirs, files in os.walk(dir_path, topdown=False):
+        # 第一步：删除文件
+        for name in files:
+            os.remove(os.path.join(root, name))  # 删除文件
+        # 第二步：删除空文件夹
+        for name in dirs:
+            os.rmdir(os.path.join(root, name)) # 删除一个空目录
+
+
+def get_target(path='../data/ex/compare4som-qnn', verbose = True):
+    # TODO 删除
+    # path = '../data/ex/compare4som-qnn/sim/SD3H/300'
+    for root, dirs, files in os.walk(path):
+        if 'label.csv' in files and 'label_expert.csv' in files:
+            l1 = pd.read_csv(os.path.join(root, 'label.csv'))
+            l2 = pd.read_csv(os.path.join(root, 'label_expert.csv'))
+            target = pd.DataFrame(columns=l1.columns)
+
+            try:
+                if l1.shape[0] == l2.shape[0]:
+                    for i in range(l1.shape[0]):
+                        if i % 3 == 0:
+                            target.loc[i] = l1.loc[i].values
+                        else:
+                            target.loc[i] = l2.loc[i].values
+                else:
+                    raise ValueError("l1与l2长度不相等")
+            except Exception as e:
+                print(f'引发异常{repr(e)}')
+
+            target['Unnamed: 0'] = list(range(l1.shape[0]))
+            # target.pop('Unnamed: 0')
+            target_path = os.path.join(root, 'target_3.csv')
+            if os.path.exists(target_path):
+                os.remove(target_path)
+            target.to_csv(target_path, index=False)
+            if verbose:
+                print(root)
+                print(f'acc_pre:{metric_aar(l1.iloc[:, 1:].values, l2.iloc[:, 1:].values)}')
+                print(f'acc_after:{metric_aar(l1.iloc[:, 1:].values, target.iloc[:, 1:].values)}')
+            # break
+
+
 if __name__ == '__main__':
-    path = '../data/sim/'
-    sim_get_labels(path)
+    # path = '../data/sim/'
+    q = pandas.read_csv('../data/ex/compare4som-qnn/sim/SD1H/50/q.csv').values[:, 1:].astype(int)
+    resp = pandas.read_csv('../data/ex/compare4som-qnn/sim/SD1H/50/resp.csv').values[:, 1:].astype(int)
+    # amp = run_r_model(q, resp, mod_name='LCDM')
+    get_target()
 
 
